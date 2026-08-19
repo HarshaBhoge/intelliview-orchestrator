@@ -27,6 +27,44 @@ Session state itself isn't owned here — it lives in
 Postgres and Redis by [`StateSynchronizer`](../orchestrator/state_sync.py).
 This code just calls into that.
 
+## Risk Factors
+
+`risk_engine.py` combines signals from the video, audio, and evaluation
+pipelines to calculate the interview risk score.
+
+### Video Risk Factors
+
+- **Multiple persons detected** – detects when more than one person is present
+  in the interview frame. Default risk contribution: `0.35`.
+- **Phone detected** – detects when a mobile phone is identified in the video.
+  Default risk contribution: `0.25`.
+- **Suspicious head movement** – detects suspicious head movement during the
+  interview. Default risk contribution: `0.20`.
+- **No face detected** – detects when the candidate's face is not detected.
+  Default risk contribution: `0.45`.
+
+### Audio Risk Factors
+
+- **Background voices** – detects additional voices in the interview audio.
+  Default risk contribution: `0.35`.
+- **Suspicious conversation pattern** – detects a suspicious conversation
+  pattern in the audio. Default risk contribution: `0.25`.
+- **No transcription** – detects when no interview speech transcription is
+  available. Default risk contribution: `0.40`.
+
+### Evaluation Risk Factors
+
+- **Low-quality answers** – identifies answers with an overall quality score
+  below `40`. Default risk contribution: `0.30`.
+- **Low technical accuracy** – identifies answers with a technical accuracy
+  score below `40`. Default risk contribution: `0.40`.
+- **Poor communication** – identifies answers with a communication clarity
+  score below `40`. Default risk contribution: `0.20`.
+- **Hallucination** – identifies answers flagged as containing hallucinated
+  content. Default risk contribution: `0.30`.
+
+The numeric risk contributions are configurable through the corresponding RISK_* environment variables in risk_engine.py.
+
 ## How this folder fits into the rest of the system
 
 ```mermaid

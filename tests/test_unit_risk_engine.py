@@ -170,3 +170,106 @@ def test_multiple_persons_has_priority_over_face_absent():
     )
 
     assert report["risk_classification"] == "CRITICAL"
+
+
+def test_video_risk_suspicious_head_movement_increases_risk():
+    base = RiskScoringEngine.calculate_video_risk(
+        {
+            "face_detected": {"faces_found": True},
+            "head_movement_suspicious": {"suspicious_movement_detected": False},
+        }
+    )
+
+    suspicious = RiskScoringEngine.calculate_video_risk(
+        {
+            "face_detected": {"faces_found": True},
+            "head_movement_suspicious": {"suspicious_movement_detected": True},
+        }
+    )
+
+    assert suspicious > base
+
+
+def test_audio_risk_suspicious_conversation_increases_risk():
+    base = RiskScoringEngine.calculate_audio_risk({"transcription": {"text": "hello"}})
+
+    suspicious = RiskScoringEngine.calculate_audio_risk(
+        {
+            "transcription": {"text": "hello"},
+            "suspicious_conversation": {"suspicious_pattern_detected": True},
+        }
+    )
+
+    assert suspicious > base
+
+
+def test_audio_risk_no_transcription_increases_risk():
+    base = RiskScoringEngine.calculate_audio_risk({"transcription": {"text": "hello"}})
+
+    no_transcription = RiskScoringEngine.calculate_audio_risk(
+        {"transcription": {"text": ""}}
+    )
+
+    assert no_transcription > base
+
+
+def test_evaluation_risk_low_accuracy_increases_risk():
+    base = RiskScoringEngine.calculate_evaluation_risk(
+        {
+            "answer_quality_score": {"overall_quality_score": 80},
+            "technical_accuracy": {"accuracy_score": 80},
+            "communication_clarity": {"clarity_score": 80},
+        }
+    )
+
+    low_accuracy = RiskScoringEngine.calculate_evaluation_risk(
+        {
+            "answer_quality_score": {"overall_quality_score": 80},
+            "technical_accuracy": {"accuracy_score": 20},
+            "communication_clarity": {"clarity_score": 80},
+        }
+    )
+
+    assert low_accuracy > base
+
+
+def test_evaluation_risk_poor_communication_increases_risk():
+    base = RiskScoringEngine.calculate_evaluation_risk(
+        {
+            "answer_quality_score": {"overall_quality_score": 80},
+            "technical_accuracy": {"accuracy_score": 80},
+            "communication_clarity": {"clarity_score": 80},
+        }
+    )
+
+    poor_communication = RiskScoringEngine.calculate_evaluation_risk(
+        {
+            "answer_quality_score": {"overall_quality_score": 80},
+            "technical_accuracy": {"accuracy_score": 80},
+            "communication_clarity": {"clarity_score": 20},
+        }
+    )
+
+    assert poor_communication > base
+
+
+def test_evaluation_risk_hallucination_increases_risk():
+    base = RiskScoringEngine.calculate_evaluation_risk(
+        {
+            "answer_quality_score": {"overall_quality_score": 80},
+            "technical_accuracy": {"accuracy_score": 80},
+            "communication_clarity": {"clarity_score": 80},
+            "hallucination_check": {"is_hallucination": False},
+        }
+    )
+
+    hallucination = RiskScoringEngine.calculate_evaluation_risk(
+        {
+            "answer_quality_score": {"overall_quality_score": 80},
+            "technical_accuracy": {"accuracy_score": 80},
+            "communication_clarity": {"clarity_score": 80},
+            "hallucination_check": {"is_hallucination": True},
+        }
+    )
+
+    assert hallucination > base
