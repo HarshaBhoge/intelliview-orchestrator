@@ -102,6 +102,62 @@ class CandidateManager:
         finally:
             db.close()
 
+    def update_candidate(
+        self,
+        candidate_id: str,
+        name: str,
+        email: str,
+        resume_text: str | None = None,
+        skills: list[str] | None = None,
+    ) -> dict[str, Any] | None:
+        """Update editable candidate profile fields."""
+
+        db = SessionLocal()
+
+        try:
+            candidate = db.execute(
+                select(Candidate).where(Candidate.candidate_id == candidate_id)
+            ).scalar_one_or_none()
+
+            if not candidate:
+                return None
+
+            candidate.name = name.strip()
+            candidate.email = email.strip().lower()
+            candidate.resume_text = resume_text
+            candidate.skills = skills or []
+            candidate.updated_at = utcnow()
+
+            db.commit()
+            db.refresh(candidate)
+
+            return {
+                "candidate_id": candidate.candidate_id,
+                "name": candidate.name,
+                "email": candidate.email,
+                "resume_text": candidate.resume_text,
+                "skills": candidate.skills or [],
+                "interview_history": candidate.interview_history or [],
+                "avg_score": candidate.avg_score,
+                "total_interviews": candidate.total_interviews,
+                "created_at": (
+                    candidate.created_at.isoformat()
+                    if candidate.created_at
+                    else None
+                ),
+                "updated_at": (
+                    candidate.updated_at.isoformat()
+                    if candidate.updated_at
+                    else None
+                ),
+            }
+
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            db.close()
+
     def list_candidates(
         self,
         limit: int = 20,
@@ -134,6 +190,7 @@ class CandidateManager:
                 query = query.where(
                     cast(Candidate.skills, Text).ilike(f"%{skill.strip()}%")
                 )
+
             # Position filter
             if position and position.strip():
                 query = query.where(
@@ -169,7 +226,9 @@ class CandidateManager:
                     "skills": c.skills or [],
                     "avg_score": c.avg_score,
                     "total_interviews": c.total_interviews,
-                    "created_at": (c.created_at.isoformat() if c.created_at else None),
+                    "created_at": (
+                        c.created_at.isoformat() if c.created_at else None
+                    ),
                 }
                 for c in rows
             ]
@@ -257,9 +316,15 @@ class CandidateManager:
                     "status": r.status,
                     "overall_score": r.overall_score,
                     "risk_score": r.risk_score,
-                    "start_time": (r.start_time.isoformat() if r.start_time else None),
-                    "end_time": (r.end_time.isoformat() if r.end_time else None),
-                    "created_at": (r.created_at.isoformat() if r.created_at else None),
+                    "start_time": (
+                        r.start_time.isoformat() if r.start_time else None
+                    ),
+                    "end_time": (
+                        r.end_time.isoformat() if r.end_time else None
+                    ),
+                    "created_at": (
+                        r.created_at.isoformat() if r.created_at else None
+                    ),
                 }
                 for r in rows
             ]
