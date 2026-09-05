@@ -1,7 +1,7 @@
 # =========================================================
 # Stage 1: Builder
 # =========================================================
-FROM python:3.11-slim-bullseye AS builder
+FROM python:3.11-slim-bookworm AS builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -38,7 +38,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 # =========================================================
 # Stage 2: Runtime
 # =========================================================
-FROM python:3.11-slim-bullseye AS runtime
+FROM python:3.11-slim-bookworm AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
